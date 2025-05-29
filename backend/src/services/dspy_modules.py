@@ -99,22 +99,18 @@ class PaperExtractor(dspy.Module):
 
 class PaperCritic(dspy.Module):
     """
-    Module to critique a research paper using ReAct (Reasoning + Action) approach
+    Module to critique a research paper using chain of thought reasoning
     """
 
     def __init__(self):
         super().__init__()
-        # Use ReAct for systematic analysis and critique
-        self.critique = dspy.ReAct(CritiqueResearchPaper)
+        # Use ChainOfThought for systematic analysis and critique
+        self.critique = dspy.ChainOfThought(CritiqueResearchPaper)
 
     def forward(self, text: str) -> Dict[str, str]:
-        logger.info("Generating paper critique using ReAct approach")
+        logger.info("Generating paper critique using chain-of-thought reasoning")
         try:
-            # ReAct will analyze the paper systematically:
-            # 1. Analyze methodology
-            # 2. Identify limitations
-            # 3. Assess validity
-            # 4. Formulate critique
+            # ChainOfThought will analyze the paper systematically
             result = self.critique(input=text)
             logger.info("Successfully generated paper critique")
             return {"critique": result.critique}
