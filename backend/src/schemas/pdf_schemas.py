@@ -19,9 +19,11 @@ class PaperCritique(BaseModel):
 
 
 class ReviewerQuestions(BaseModel):
-    """Schema for suggested reviewer questions"""
+    """Schema for reviewer questions with structured format"""
 
-    questions: List[str]
+    main_question: Optional[str] = None
+    sub_questions: Optional[List[str]] = None
+    addressed_questions: Optional[str] = None
 
 
 class PaperAnalysisResponse(BaseModel):
@@ -33,4 +35,4 @@ class PaperAnalysisResponse(BaseModel):
     results: Optional[str] = None
     conclusion: Optional[str] = None
     critique: Optional[str] = None
-    reviewer_questions: Optional[List[str]] = None
+    reviewer_questions: Optional[ReviewerQuestions] = None

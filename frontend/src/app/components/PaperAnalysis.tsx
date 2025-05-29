@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 
+interface ReviewerQuestions {
+  main_question?: string;
+  sub_questions?: string[];
+  addressed_questions?: string;
+}
+
 interface PaperAnalysisProps {
   analysis: {
     goal?: string;
@@ -10,7 +16,7 @@ interface PaperAnalysisProps {
     results?: string;
     conclusion?: string;
     critique?: string;
-    reviewer_questions?: string[];
+    reviewer_questions?: ReviewerQuestions;
   };
 }
 
@@ -117,25 +123,56 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
         {activeTab === "questions" && (
           <div>
             <h3 className="text-lg font-medium text-gray-900">
-              Reviewer Questions
+              Research Questions
             </h3>
-            {analysis.reviewer_questions &&
-            analysis.reviewer_questions.length > 0 ? (
-              <ul className="mt-4 space-y-4">
-                {analysis.reviewer_questions.map((question, index) => (
-                  <li key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex">
-                      <span className="flex-shrink-0 h-6 w-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="ml-3 text-gray-600">{question}</p>
+            {analysis.reviewer_questions ? (
+              <div className="mt-4 space-y-6">
+                {analysis.reviewer_questions.main_question && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-blue-900 mb-2">
+                      Main Research Question
+                    </h4>
+                    <p className="text-blue-800">
+                      {analysis.reviewer_questions.main_question}
+                    </p>
+                  </div>
+                )}
+
+                {analysis.reviewer_questions.sub_questions &&
+                  analysis.reviewer_questions.sub_questions.length > 0 && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-md font-medium text-gray-900 mb-2">
+                        Sub Questions
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.reviewer_questions.sub_questions.map(
+                          (question, index) => (
+                            <li key={index} className="flex">
+                              <span className="flex-shrink-0 h-6 w-6 bg-gray-200 text-gray-800 rounded-full flex items-center justify-center text-sm font-medium mr-3">
+                                {index + 1}
+                              </span>
+                              <p className="text-gray-700">{question}</p>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  )}
+
+                {analysis.reviewer_questions.addressed_questions && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-green-900 mb-2">
+                      How Questions Are Addressed
+                    </h4>
+                    <p className="text-green-800 whitespace-pre-line">
+                      {analysis.reviewer_questions.addressed_questions}
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="mt-2 text-gray-500 italic">
-                No reviewer questions available.
+                No research questions available.
               </p>
             )}
           </div>

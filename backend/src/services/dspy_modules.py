@@ -18,7 +18,7 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if openai_api_key:
     logger.info("Configuring DSPy with OpenAI")
-    lm = dspy.LM("openai/gpt-4o-mini", api_key=openai_api_key)
+    lm = dspy.LM("openai/gpt-4o-mini", api_key=openai_api_key, cache=True)
     dspy.configure(lm=lm)
     logger.info("DSPy configured successfully")
 else:
@@ -62,7 +62,7 @@ class ExtractResearchQuestions(dspy.Signature):
         desc="The primary research question that the paper addresses"
     )
     sub_questions = dspy.OutputField(
-        desc="List of secondary or related questions the paper investigates"
+        desc="List of secondary questions as plain text without numbers, bullets, or enumeration"
     )
     addressed_questions = dspy.OutputField(
         desc="How the paper addresses these questions (methods/approaches used)"
@@ -133,11 +133,13 @@ class QuestionExtractor(dspy.Module):
         try:
             result = self.extract(input=text)
 
-            # Format the output
+            # Return the object structure
             questions_data = {
-                "main_question": result.main_question,
-                "sub_questions": self._format_sub_questions(result.sub_questions),
-                "addressed_questions": result.addressed_questions,
+                "reviewer_questions": {
+                    "main_question": result.main_question,
+                    "sub_questions": self._format_sub_questions(result.sub_questions),
+                    "addressed_questions": result.addressed_questions,
+                }
             }
 
             logger.info("Successfully extracted research questions from paper")
@@ -191,12 +193,6 @@ def process_paper_chunk(chunk: str) -> Dict[str, Any]:
 def aggregate_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Aggregate results from multiple chunks
-
-    Args:
-        results: List of results from each chunk
-
-    Returns:
-        Aggregated results
     """
     logger.info(f"Aggregating results from {len(results)} chunks")
     aggregated = {
@@ -206,7 +202,11 @@ def aggregate_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
         "results": "",
         "conclusion": "",
         "critique": "",
-        "reviewer_questions": [],
+        "reviewer_questions": {
+            "main_question": "",
+            "sub_questions": [],
+            "addressed_questions": "",
+        },
     }
 
     # Combine text fields
@@ -215,25 +215,33 @@ def aggregate_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
         aggregated[field] = combined
         logger.info(f"Aggregated {field}: {len(combined)} characters")
 
-    # Combine and deduplicate questions
-    all_questions = []
+    # Aggregate reviewer questions
+    main_questions = []
+    all_sub_questions = []
+    addressed_questions = []
+
     for r in results:
-        if r.get("questions"):
-            all_questions.extend(r.get("questions", []))
+        if r.get("reviewer_questions"):
+            rq = r.get("reviewer_questions", {})
+            if rq.get("main_question"):
+                main_questions.append(rq.get("main_question"))
+            if rq.get("sub_questions"):
+                all_sub_questions.extend(rq.get("sub_questions", []))
+            if rq.get("addressed_questions"):
+                addressed_questions.append(rq.get("addressed_questions"))
 
-    # Simple deduplication by checking if a question is a substring of another
-    unique_questions = []
-    for q in all_questions:
-        is_duplicate = False
-        for existing_q in unique_questions:
-            if q in existing_q or existing_q in q:
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique_questions.append(q)
+    # Combine the questions
+    aggregated["reviewer_questions"] = {
+        "main_question": " | ".join(main_questions) if main_questions else "",
+        "sub_questions": list(set(all_sub_questions)),  # Remove duplicates
+        "addressed_questions": (
+            "\n\n".join(addressed_questions) if addressed_questions else ""
+        ),
+    }
 
-    aggregated["reviewer_questions"] = unique_questions
-    logger.info(f"Aggregated {len(unique_questions)} unique reviewer questions")
+    logger.info(
+        f"Aggregated reviewer questions: {len(aggregated['reviewer_questions']['sub_questions'])} sub-questions"
+    )
 
     return aggregated
 

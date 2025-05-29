@@ -10,6 +10,12 @@ const api = axios.create({
 });
 
 // API interfaces
+export interface ReviewerQuestions {
+  main_question?: string;
+  sub_questions?: string[];
+  addressed_questions?: string;
+}
+
 export interface PaperAnalysis {
   goal?: string;
   hypothesis?: string;
@@ -17,7 +23,7 @@ export interface PaperAnalysis {
   results?: string;
   conclusion?: string;
   critique?: string;
-  reviewer_questions?: string[];
+  reviewer_questions?: ReviewerQuestions;
   error?: string;
 }
 
