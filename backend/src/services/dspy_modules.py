@@ -258,7 +258,6 @@ def analyze_paper(text: str, chunk_size: int = 4000) -> Dict[str, Any]:
         Analysis results
     """
     logger.info(f"Starting paper analysis with text of length {len(text)}")
-    from ..utils.pdf_utils import chunk_text
 
     # Validate input
     if not text or not isinstance(text, str):
