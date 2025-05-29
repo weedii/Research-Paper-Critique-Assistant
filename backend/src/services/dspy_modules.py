@@ -52,27 +52,37 @@ class CritiqueResearchPaper(dspy.Signature):
     critique = dspy.OutputField(desc="Flaws, gaps, or reasoning problems in the paper")
 
 
-class SuggestReviewerQuestions(dspy.Signature):
+class ExtractResearchQuestions(dspy.Signature):
     """
-    Generate smart, critical follow-up questions for a research paper
+    Extract research questions that the paper itself poses and addresses
     """
 
     input = dspy.InputField(desc="Text from a research paper")
-    questions = dspy.OutputField(desc="Smart, critical follow-up questions")
+    main_question = dspy.OutputField(
+        desc="The primary research question that the paper addresses"
+    )
+    sub_questions = dspy.OutputField(
+        desc="List of secondary or related questions the paper investigates"
+    )
+    addressed_questions = dspy.OutputField(
+        desc="How the paper addresses these questions (methods/approaches used)"
+    )
 
 
 class PaperExtractor(dspy.Module):
     """
-    Module to extract research paper sections
+    Module to extract research paper sections using chain of thought reasoning
     """
 
     def __init__(self):
         super().__init__()
-        self.extract = dspy.Predict(ExtractResearchParts)
+        # Use ChainOfThought for step-by-step reasoning
+        self.extract = dspy.ChainOfThought(ExtractResearchParts)
 
     def forward(self, text: str) -> Dict[str, str]:
-        logger.info("Extracting paper sections")
+        logger.info("Extracting paper sections using chain-of-thought reasoning")
         try:
+            # ChainOfThought will break down the extraction process
             result = self.extract(input=text)
             logger.info("Successfully extracted paper sections")
             return {
@@ -89,16 +99,22 @@ class PaperExtractor(dspy.Module):
 
 class PaperCritic(dspy.Module):
     """
-    Module to critique a research paper
+    Module to critique a research paper using ReAct (Reasoning + Action) approach
     """
 
     def __init__(self):
         super().__init__()
-        self.critique = dspy.Predict(CritiqueResearchPaper)
+        # Use ReAct for systematic analysis and critique
+        self.critique = dspy.ReAct(CritiqueResearchPaper)
 
     def forward(self, text: str) -> Dict[str, str]:
-        logger.info("Generating paper critique")
+        logger.info("Generating paper critique using ReAct approach")
         try:
+            # ReAct will analyze the paper systematically:
+            # 1. Analyze methodology
+            # 2. Identify limitations
+            # 3. Assess validity
+            # 4. Formulate critique
             result = self.critique(input=text)
             logger.info("Successfully generated paper critique")
             return {"critique": result.critique}
@@ -107,38 +123,45 @@ class PaperCritic(dspy.Module):
             raise
 
 
-class QuestionGenerator(dspy.Module):
+class QuestionExtractor(dspy.Module):
     """
-    Module to generate reviewer questions for a research paper
+    Module to extract research questions from the paper
     """
 
     def __init__(self):
         super().__init__()
-        self.generate = dspy.Predict(SuggestReviewerQuestions)
+        self.extract = dspy.Predict(ExtractResearchQuestions)
 
-    def forward(self, text: str) -> Dict[str, List[str]]:
-        logger.info("Generating reviewer questions")
+    def forward(self, text: str) -> Dict[str, Any]:
+        logger.info("Extracting research questions from paper")
         try:
-            result = self.generate(input=text)
-            # Convert string to list if needed
-            if isinstance(result.questions, str):
-                # Split by newlines or numbered items
-                questions = [
-                    q.strip() for q in result.questions.split("\n") if q.strip()
-                ]
-                if (
-                    not questions
-                ):  # If splitting by newline didn't work, try another approach
-                    questions = [result.questions]
-            else:
-                questions = result.questions
-            logger.info(f"Successfully generated {len(questions)} reviewer questions")
-            return {"questions": questions}
+            result = self.extract(input=text)
+
+            # Format the output
+            questions_data = {
+                "main_question": result.main_question,
+                "sub_questions": self._format_sub_questions(result.sub_questions),
+                "addressed_questions": result.addressed_questions,
+            }
+
+            logger.info("Successfully extracted research questions from paper")
+            return questions_data
         except Exception as e:
             logger.error(
-                f"Error generating reviewer questions: {str(e)}", exc_info=True
+                f"Error extracting research questions: {str(e)}", exc_info=True
             )
             raise
+
+    def _format_sub_questions(self, questions: str) -> List[str]:
+        """Format sub-questions into a clean list"""
+        if isinstance(questions, list):
+            return questions
+        # Split by newlines or numbered items and clean up
+        questions_list = [q.strip() for q in questions.split("\n") if q.strip()]
+        if not questions_list:
+            # If no clear separation, return as single item
+            return [questions] if questions else []
+        return questions_list
 
 
 def process_paper_chunk(chunk: str) -> Dict[str, Any]:
@@ -155,11 +178,11 @@ def process_paper_chunk(chunk: str) -> Dict[str, Any]:
     try:
         extractor = PaperExtractor()
         critic = PaperCritic()
-        question_gen = QuestionGenerator()
+        question_extractor = QuestionExtractor()
 
         sections = extractor(chunk)
         critique = critic(chunk)
-        questions = question_gen(chunk)
+        questions = question_extractor(chunk)
 
         result = {**sections, **critique, **questions}
         logger.info("Successfully processed paper chunk")

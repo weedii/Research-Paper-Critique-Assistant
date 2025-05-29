@@ -66,7 +66,7 @@ def save_upload_file_temp(upload_file) -> str:
 
 def clean_academic_text(text: str) -> str:
     """
-    Clean text extracted from academic PDFs to reduce noise and improve chunking.
+    Clean text extracted from PDFs to reduce noise and improve chunking.
 
     Args:
         text: Raw text extracted from PDF
