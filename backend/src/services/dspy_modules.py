@@ -3,6 +3,7 @@ import os
 import logging
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
+from ..utils.pdf_utils import split_into_chunks
 
 # Configure logging
 logging.basicConfig(
@@ -281,25 +282,24 @@ def analyze_paper(text: str, chunk_size: int = 4000) -> Dict[str, Any]:
         chunk_size = MAX_CHUNK_SIZE
 
     try:
-        # TEMPORARY: Skip chunking for testing - just process the full text
-        # chunks = chunk_text(text, chunk_size=chunk_size)
-        # logger.info(f"Split paper into {len(chunks)} chunks")
-        chunks = [text]  # Process the entire text as one chunk
-        logger.info("Processing entire text as one chunk for testing")
+        # Split the paper into manageable chunks
+        # chunks = split_into_chunks(text, chunk_size=chunk_size)
+        chunks = [text]
+        logger.info(f"Split paper into {len(chunks)} chunks")
 
         if not chunks:
-            logger.error("No chunks were generated from the paper text")
-            return {
-                "goal": "Error: Could not extract text from the paper",
-                "hypothesis": "",
-                "methods": "",
-                "results": "",
-                "conclusion": "",
-                "critique": "Error: Could not extract text for critique",
-                "reviewer_questions": [
-                    "Could not generate questions due to text extraction error"
-                ],
-            }
+            logger.warning(
+                "No chunks were generated, using full text as a single chunk"
+            )
+            chunks = [text]
+
+        # Limit to a reasonable number of chunks if the paper is very large
+        # MAX_CHUNKS = 5
+        # if len(chunks) > MAX_CHUNKS:
+        #     logger.warning(
+        #         f"Limiting analysis to first {MAX_CHUNKS} chunks for performance"
+        #     )
+        #     chunks = chunks[:MAX_CHUNKS]
 
         results = []
         for i, chunk in enumerate(chunks):

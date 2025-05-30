@@ -99,3 +99,97 @@ def clean_academic_text(text: str) -> str:
     # Final cleanup
     text = text.strip()
     return text
+
+
+def split_into_chunks(
+    text: str, chunk_size: int = 4000, overlap: int = 200
+) -> List[str]:
+    """
+    Split the text extracted from a PDF into chunks suitable for LLM processing.
+
+    Args:
+        text: The text to split into chunks
+        chunk_size: Maximum size of each chunk in characters
+        overlap: Number of characters to overlap between chunks
+
+    Returns:
+        List of text chunks
+    """
+    if not text or not isinstance(text, str):
+        return []
+
+    # Clean the text to improve chunking
+    text = clean_academic_text(text)
+
+    # For short texts, return as a single chunk
+    if len(text) <= chunk_size:
+        return [text]
+
+    chunks = []
+    paragraphs = re.split(r"\n\s*\n|\r\n\s*\r\n", text)
+    current_chunk = ""
+
+    # Try to maintain paragraph integrity when possible
+    for paragraph in paragraphs:
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+
+        # If adding this paragraph would exceed chunk size and we already have content
+        if len(current_chunk) + len(paragraph) > chunk_size and current_chunk:
+            chunks.append(current_chunk)
+            # Start new chunk with overlap from previous chunk if possible
+            if overlap > 0 and len(current_chunk) > overlap:
+                current_chunk = current_chunk[-overlap:] + "\n\n" + paragraph
+            else:
+                current_chunk = paragraph
+        else:
+            if current_chunk:
+                current_chunk += "\n\n"
+            current_chunk += paragraph
+
+    # Don't forget the last chunk
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    # If chunking by paragraphs failed (e.g., huge paragraphs), force split by sentences
+    if len(chunks) <= 1 and len(text) > chunk_size:
+        chunks = []
+        sentences = re.split(r"(?<=[.!?])\s+", text)
+        current_chunk = ""
+
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+
+            if len(current_chunk) + len(sentence) > chunk_size and current_chunk:
+                chunks.append(current_chunk)
+                current_chunk = sentence
+            else:
+                if current_chunk:
+                    current_chunk += " "
+                current_chunk += sentence
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+    # Last resort: if we still don't have good chunks, force split by characters
+    if len(chunks) <= 1 and len(text) > chunk_size:
+        chunks = []
+        for i in range(0, len(text), chunk_size - overlap):
+            end = min(i + chunk_size, len(text))
+            # Try to find a sentence break near the end
+            if end < len(text):
+                for j in range(min(end, len(text) - 1), max(i, end - 200), -1):
+                    if text[j] in ".!?" and (
+                        j + 1 >= len(text) or text[j + 1].isspace()
+                    ):
+                        end = j + 1
+                        break
+
+            chunk = text[i:end].strip()
+            if chunk:
+                chunks.append(chunk)
+
+    return chunks
