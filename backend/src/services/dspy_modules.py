@@ -19,7 +19,13 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if openai_api_key:
     logger.info("Configuring DSPy with OpenAI")
-    lm = dspy.LM("openai/gpt-4o", api_key=openai_api_key, cache=False)
+    lm = dspy.LM(
+        "openai/gpt-4o",
+        api_key=openai_api_key,
+        cache=False,
+        temperature=0.5,
+        # max_tokens=2000,
+    )
     dspy.configure(lm=lm)
     logger.info("DSPy configured successfully")
 else:
