@@ -70,6 +70,25 @@ class ExtractResearchQuestions(dspy.Signature):
     )
 
 
+class AggregateChunks(dspy.Signature):
+    """Aggregate multiple chunk results into a single coherent result"""
+
+    chunks = dspy.InputField(desc="List of chunk results to be aggregated")
+    goal = dspy.OutputField(desc="The main goal of the research")
+    hypothesis = dspy.OutputField(desc="The main hypothesis or research question")
+    methods = dspy.OutputField(desc="The methodology used in the research")
+    results = dspy.OutputField(desc="The main results or findings")
+    conclusion = dspy.OutputField(desc="The conclusions drawn from the results")
+    critique = dspy.OutputField(desc="Flaws, gaps, or reasoning problems in the paper")
+    main_question = dspy.OutputField(
+        desc="The primary research question that the paper addresses"
+    )
+    sub_questions = dspy.OutputField(desc="List of secondary questions")
+    addressed_questions = dspy.OutputField(
+        desc="How the paper addresses these questions"
+    )
+
+
 class PaperExtractor(dspy.Module):
     """
     Module to extract research paper sections using chain of thought reasoning
@@ -193,58 +212,106 @@ def process_paper_chunk(chunk: str) -> Dict[str, Any]:
 
 def aggregate_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Aggregate results from multiple chunks
+    Aggregate results from multiple chunks using DSPy's Predict module
     """
     logger.info(f"Aggregating results from {len(results)} chunks")
-    aggregated = {
-        "goal": "",
-        "hypothesis": "",
-        "methods": "",
-        "results": "",
-        "conclusion": "",
-        "critique": "",
-        "reviewer_questions": {
-            "main_question": "",
-            "sub_questions": [],
-            "addressed_questions": "",
-        },
-    }
 
-    # Combine text fields
-    for field in ["goal", "hypothesis", "methods", "results", "conclusion", "critique"]:
-        combined = "\n\n".join([r.get(field, "") for r in results if r.get(field)])
-        aggregated[field] = combined
-        logger.info(f"Aggregated {field}: {len(combined)} characters")
+    # For single chunk, just return it directly
+    if len(results) == 1:
+        logger.info("Only one chunk, returning as-is")
+        return results[0]
 
-    # Aggregate reviewer questions
-    main_questions = []
-    all_sub_questions = []
-    addressed_questions = []
+    try:
+        # Use Predict to generate the aggregated result
+        aggregator = dspy.Predict(AggregateChunks)
 
-    for r in results:
-        if r.get("reviewer_questions"):
-            rq = r.get("reviewer_questions", {})
-            if rq.get("main_question"):
-                main_questions.append(rq.get("main_question"))
-            if rq.get("sub_questions"):
-                all_sub_questions.extend(rq.get("sub_questions", []))
-            if rq.get("addressed_questions"):
-                addressed_questions.append(rq.get("addressed_questions"))
+        # Convert results to a string representation for the LLM
+        chunks_str = str(results)
 
-    # Combine the questions
-    aggregated["reviewer_questions"] = {
-        "main_question": " | ".join(main_questions) if main_questions else "",
-        "sub_questions": list(set(all_sub_questions)),  # Remove duplicates
-        "addressed_questions": (
-            "\n\n".join(addressed_questions) if addressed_questions else ""
-        ),
-    }
+        # Get the aggregated result
+        aggregated_result = aggregator(chunks=chunks_str)
 
-    logger.info(
-        f"Aggregated reviewer questions: {len(aggregated['reviewer_questions']['sub_questions'])} sub-questions"
-    )
+        # Format the output to match the expected structure
+        aggregated = {
+            "goal": aggregated_result.goal,
+            "hypothesis": aggregated_result.hypothesis,
+            "methods": aggregated_result.methods,
+            "results": aggregated_result.results,
+            "conclusion": aggregated_result.conclusion,
+            "critique": aggregated_result.critique,
+            "reviewer_questions": {
+                "main_question": aggregated_result.main_question,
+                "sub_questions": (
+                    aggregated_result.sub_questions.split("\n")
+                    if isinstance(aggregated_result.sub_questions, str)
+                    else aggregated_result.sub_questions
+                ),
+                "addressed_questions": aggregated_result.addressed_questions,
+            },
+        }
 
-    return aggregated
+        logger.info("Successfully aggregated results using DSPy Predict")
+        return aggregated
+
+    except Exception as e:
+        logger.error(
+            f"Error using DSPy Predict for aggregation: {str(e)}", exc_info=True
+        )
+        logger.info("Falling back to basic aggregation method")
+
+        # Fallback to a simpler aggregation method
+        aggregated = {
+            "goal": "",
+            "hypothesis": "",
+            "methods": "",
+            "results": "",
+            "conclusion": "",
+            "critique": "",
+            "reviewer_questions": {
+                "main_question": "",
+                "sub_questions": [],
+                "addressed_questions": "",
+            },
+        }
+
+        # Combine text fields
+        for field in [
+            "goal",
+            "hypothesis",
+            "methods",
+            "results",
+            "conclusion",
+            "critique",
+        ]:
+            combined = "\n\n".join([r.get(field, "") for r in results if r.get(field)])
+            aggregated[field] = combined
+
+        # Aggregate reviewer questions
+        main_questions = []
+        all_sub_questions = []
+        addressed_questions = []
+
+        for r in results:
+            if r.get("reviewer_questions"):
+                rq = r.get("reviewer_questions", {})
+                if rq.get("main_question"):
+                    main_questions.append(rq.get("main_question"))
+                if rq.get("sub_questions"):
+                    all_sub_questions.extend(rq.get("sub_questions", []))
+                if rq.get("addressed_questions"):
+                    addressed_questions.append(rq.get("addressed_questions"))
+
+        # Combine the questions
+        aggregated["reviewer_questions"] = {
+            "main_question": main_questions[0] if main_questions else "",
+            "sub_questions": list(set(all_sub_questions)),  # Remove duplicates
+            "addressed_questions": (
+                addressed_questions[0] if addressed_questions else ""
+            ),
+        }
+
+        logger.info("Completed fallback aggregation")
+        return aggregated
 
 
 def analyze_paper(text: str, chunk_size: int = 4000) -> Dict[str, Any]:
