@@ -72,8 +72,10 @@ export default function FileUpload({
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div
-        className={`border-2 border-dashed rounded-lg p-8 mb-4 text-center ${
-          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+        className={`border-2 border-dashed rounded-lg p-8 mb-4 text-center transition-all ${
+          dragActive
+            ? "border-primary bg-primary/10"
+            : "border-border bg-secondary/50"
         }`}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
@@ -81,7 +83,7 @@ export default function FileUpload({
         onDrop={handleDrop}
       >
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-muted-foreground"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -94,11 +96,11 @@ export default function FileUpload({
           />
         </svg>
 
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Drag and drop your PDF here, or
           <button
             type="button"
-            className="mx-1 text-blue-600 hover:text-blue-800 focus:outline-none"
+            className="mx-1 text-primary hover:text-primary/80 focus:outline-none transition-colors"
             onClick={handleButtonClick}
           >
             browse
@@ -116,11 +118,11 @@ export default function FileUpload({
       </div>
 
       {selectedFile && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+        <div className="bg-secondary p-4 rounded-lg mb-4 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <svg
-                className="h-6 w-6 text-red-500 mr-2"
+                className="h-6 w-6 text-red-400 mr-2"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -133,10 +135,10 @@ export default function FileUpload({
                 />
               </svg>
               <div>
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {selectedFile.name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
@@ -144,7 +146,7 @@ export default function FileUpload({
             <button
               type="button"
               onClick={() => setSelectedFile(null)}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg
                 className="h-5 w-5"
@@ -168,10 +170,10 @@ export default function FileUpload({
         type="button"
         onClick={handleUpload}
         disabled={!selectedFile || isLoading}
-        className={`w-full py-2 px-4 rounded-md text-white font-medium ${
+        className={`w-full py-3 px-4 rounded-md text-primary-foreground font-medium transition-all ${
           !selectedFile || isLoading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
+            ? "bg-muted cursor-not-allowed"
+            : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
         }`}
       >
         {isLoading ? (

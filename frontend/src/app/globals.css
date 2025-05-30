@@ -3,25 +3,44 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #030712;
+  --foreground: #f1f5f9;
+  --primary: #8b5cf6;
+  --primary-foreground: #f8fafc;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --accent: #6d28d9;
+  --accent-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --card: #0f172a;
+  --card-foreground: #e2e8f0;
+  --border: #1e293b;
+  --input: #1e293b;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist Sans', Arial, sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  .section-heading {
+    @apply text-xl font-bold text-gray-100 mb-3;
+  }
+  
+  .section-content {
+    @apply text-gray-300 whitespace-pre-line;
+  }
+  
+  .card {
+    @apply bg-secondary rounded-lg shadow-xl border border-border p-6;
   }
 }

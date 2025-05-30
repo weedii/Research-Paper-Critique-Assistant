@@ -30,17 +30,17 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="border-b border-gray-200">
+    <div className="bg-card rounded-lg shadow-xl overflow-hidden border border-border">
+      <div className="border-b border-border">
         <nav className="flex -mb-px">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm transition-all ${
                 activeTab === tab.id
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               }`}
             >
               {tab.label}
@@ -51,69 +51,51 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
 
       <div className="p-6">
         {activeTab === "summary" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {analysis.goal && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Goal</h3>
-                <p className="mt-2 text-gray-600 whitespace-pre-line">
-                  {analysis.goal}
-                </p>
+              <div className="card">
+                <h3 className="section-heading">Goal</h3>
+                <p className="section-content">{analysis.goal}</p>
               </div>
             )}
 
             {analysis.hypothesis && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  Hypothesis
-                </h3>
-                <p className="mt-2 text-gray-600 whitespace-pre-line">
-                  {analysis.hypothesis}
-                </p>
+              <div className="card">
+                <h3 className="section-heading">Hypothesis</h3>
+                <p className="section-content">{analysis.hypothesis}</p>
               </div>
             )}
 
             {analysis.methods && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Methods</h3>
-                <p className="mt-2 text-gray-600 whitespace-pre-line">
-                  {analysis.methods}
-                </p>
+              <div className="card">
+                <h3 className="section-heading">Methods</h3>
+                <p className="section-content">{analysis.methods}</p>
               </div>
             )}
 
             {analysis.results && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Results</h3>
-                <p className="mt-2 text-gray-600 whitespace-pre-line">
-                  {analysis.results}
-                </p>
+              <div className="card">
+                <h3 className="section-heading">Results</h3>
+                <p className="section-content">{analysis.results}</p>
               </div>
             )}
 
             {analysis.conclusion && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  Conclusion
-                </h3>
-                <p className="mt-2 text-gray-600 whitespace-pre-line">
-                  {analysis.conclusion}
-                </p>
+              <div className="card">
+                <h3 className="section-heading">Conclusion</h3>
+                <p className="section-content">{analysis.conclusion}</p>
               </div>
             )}
           </div>
         )}
 
         {activeTab === "critique" && (
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">
-              Paper Critique
-            </h3>
+          <div className="card">
+            <h3 className="section-heading">Paper Critique</h3>
             {analysis.critique ? (
-              <p className="mt-2 text-gray-600 whitespace-pre-line">
-                {analysis.critique}
-              </p>
+              <p className="section-content">{analysis.critique}</p>
             ) : (
-              <p className="mt-2 text-gray-500 italic">
+              <p className="text-muted-foreground italic">
                 No critique available.
               </p>
             )}
@@ -122,17 +104,17 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
 
         {activeTab === "questions" && (
           <div>
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 className="text-xl font-bold text-foreground mb-4">
               Research Questions
             </h3>
             {analysis.reviewer_questions ? (
-              <div className="mt-4 space-y-6">
+              <div className="space-y-6">
                 {analysis.reviewer_questions.main_question && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="text-md font-medium text-blue-900 mb-2">
+                  <div className="bg-primary/10 p-5 rounded-lg border border-primary/30 card">
+                    <h4 className="text-md font-medium text-primary-foreground mb-2">
                       Main Research Question
                     </h4>
-                    <p className="text-blue-800">
+                    <p className="text-foreground">
                       {analysis.reviewer_questions.main_question}
                     </p>
                   </div>
@@ -140,18 +122,20 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
 
                 {analysis.reviewer_questions.sub_questions &&
                   analysis.reviewer_questions.sub_questions.length > 0 && (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-md font-medium text-gray-900 mb-2">
+                    <div className="bg-secondary p-5 rounded-lg card">
+                      <h4 className="text-md font-medium text-foreground mb-3">
                         Sub Questions
                       </h4>
-                      <ul className="space-y-2">
+                      <ul className="space-y-3">
                         {analysis.reviewer_questions.sub_questions.map(
                           (question, index) => (
-                            <li key={index} className="flex">
-                              <span className="flex-shrink-0 h-6 w-6 bg-gray-200 text-gray-800 rounded-full flex items-center justify-center text-sm font-medium mr-3">
+                            <li key={index} className="flex items-start">
+                              <span className="flex-shrink-0 h-6 w-6 bg-muted text-foreground rounded-full flex items-center justify-center text-sm font-medium mr-3">
                                 {index + 1}
                               </span>
-                              <p className="text-gray-700">{question}</p>
+                              <p className="text-muted-foreground">
+                                {question}
+                              </p>
                             </li>
                           )
                         )}
@@ -160,18 +144,18 @@ export default function PaperAnalysis({ analysis }: PaperAnalysisProps) {
                   )}
 
                 {analysis.reviewer_questions.addressed_questions && (
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="text-md font-medium text-green-900 mb-2">
+                  <div className="bg-accent/10 p-5 rounded-lg border border-accent/30 card">
+                    <h4 className="text-md font-medium text-accent-foreground mb-2">
                       How Questions Are Addressed
                     </h4>
-                    <p className="text-green-800 whitespace-pre-line">
+                    <p className="text-foreground whitespace-pre-line">
                       {analysis.reviewer_questions.addressed_questions}
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-gray-500 italic">
+              <p className="text-muted-foreground italic">
                 No research questions available.
               </p>
             )}
